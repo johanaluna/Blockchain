@@ -15,13 +15,10 @@ def proof_of_work(block):
     """
     block_string = json.dumps(block, sort_keys=True)
     seed = 0
-
-    #Preguntar a Matt si puedo cambiar esto a un numero random
-    proof = f'{seed}'
-
+    proof = f'I am Groot. {seed} 42'
     while valid_proof(block_string, proof) is False:
         seed += 1
-        proof = f'{seed}'
+        proof = f'I am Groot. {seed} 42'
 
     return proof
 
@@ -40,7 +37,7 @@ def valid_proof(block_string, proof):
     guess = f'{block_string}{proof}'.encode()
     guess_hash = hashlib.sha256(guess).hexdigest()
 
-    return guess_hash[:6] == '000000'
+    return guess_hash[:5] == '00000'
 
 
 if __name__ == '__main__':
@@ -70,29 +67,30 @@ if __name__ == '__main__':
             break
 
         # Get the block from `data` and use it to look for a new proof
-        print(f'Starting... block {data["index"]}.')
+        index = data.get("index")
+        print(f'Starting proof_of_work for block {index}.')
         start = time.time()
         new_proof = proof_of_work(data)
         end = time.time()
-        print(f'Time to finish: {end - start:.1f} seconds.')
+        print(f'Proof_of_work done for block {index}.')
+        print(f'Proof completed in {end - start:.1f} seconds.')
 
         # When found, POST it to the server {"proof": new_proof, "id": id}
         post_data = {"proof": new_proof, "id": id}
 
         r = requests.post(url=node + "/mine", json=post_data)
         # TODO handle non-json response
-        mine_response = r.json()
-        if mine_response['success']:
-            coins += 1
-            print(f'Mining: block {data["index"]} succeeded')
-        else:
-            print(f'Mining: block {data["index"]} failed')
 
+        data = r.json()
         # If the server responds with a 'message' 'New Block Forged'
         # add 1 to the number of coins mined and print it.  Otherwise,
         # print the message from the server.
-        if mine_response['success']:
-            print(f'Coins mined {coins}')
+        if data['message'] == 'New Block Forged':
+            print(f'Mining for block {index} succeeded')
+            coins += 1
+            print(f'Total number of coins is now {coins}')
         else:
-            print(mine_response)
+            print(f'Mining for block {index} did not succeed')
+            print(data['message'])
+
         print('')

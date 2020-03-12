@@ -15,7 +15,7 @@ class Blockchain(object):
         self.current_transactions = []
 
         # Create the genesis block
-        self.new_block(previous_hash=1, proof=100)
+        self.new_block(previous_hash=1, proof=0)
 
     def new_block(self, proof, previous_hash=None):
         """
@@ -36,7 +36,7 @@ class Blockchain(object):
             'timestamp': time(),
             'transactions': self.current_transactions,
             'proof': proof,
-            'previous_hash': previous_hash or self.hash(self.chain[-1]),
+            'previous_hash': previous_hash or self.hash(blockchain.last_block),
         }
 
         # Reset the current list of transactions
@@ -98,7 +98,7 @@ class Blockchain(object):
         guess = f'{block_string}{proof}'.encode()
         guess_hash = hashlib.sha256(guess).hexdigest()
 
-        return guess_hash[:5] == '00000'
+        return guess_hash[:6] == '000000'
 
 
 # Instantiate our Node
@@ -120,17 +120,19 @@ def mine():
 
     if not proof or not miner_id:
         response = {
-            'Error': 'Both a proof and an id must be submitted.',
+            'Error': 'Both: Proof and ID must be submitted.',
         }
         return response, 400
-
+    
     # Test the submitted proof
     block_string = json.dumps(blockchain.last_block, sort_keys=True)
+    
     success = blockchain.valid_proof(block_string, proof)
-
     if success:
         # Forge the new Block by adding it to the chain with the proof
         previous_hash = blockchain.hash(blockchain.last_block)
+
+        #Pilas! toca cambiar y generar un nuevo block!
         blockchain.new_block(proof, previous_hash)
 
     response = {
@@ -151,7 +153,7 @@ def full_chain():
 
 
 @app.route('/last_block', methods=['GET'])
-def last_block():
+def return_last_block():
     # Return the last block in the chain
     response = blockchain.last_block
     return jsonify(response), 200
